@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  ezra-bot:
+    build: .
+    container_name: ezra-telegram-bot
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
+      - DATABASE_PATH=/app/data/ezra.db
+    volumes:
+      - ./data:/app/data
+    user: root
+    env_file:
+      - .env
+
+  ezra-userbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.userbot
+    container_name: ezra-userbot
+    restart: unless-stopped
+    environment:
+      - DATABASE_PATH=/app/data/ezra.db
+      - TELEGRAM_FOLDER_NAME=${TELEGRAM_FOLDER_NAME:-AI}
+    volumes:
+      - ./data:/app/data:Z           # shared database
+      - ./config:/app/config:Z       # session + credentials
+    user: root
+    env_file:
+      - config/credentials.env
+    depends_on:
+      - ezra-bot

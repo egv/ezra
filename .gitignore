@@ -1,0 +1,23 @@
+config/
+
+# Environment files
+.env
+config/credentials.env
+*.session
+
+# Database
+*.db
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+EOF < /dev/null

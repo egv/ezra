@@ -1,0 +1,14 @@
+[project]
+name = "ezra"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "apscheduler>=3.11.0",
+    "openai>=1.84.0",
+    "python-dotenv>=1.1.0",
+    "python-telegram-bot>=22.1",
+    "telethon>=1.36.0",
+]

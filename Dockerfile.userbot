@@ -1,0 +1,50 @@
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+WORKDIR /app
+
+# Install system dependencies including cron
+RUN apt-get update && apt-get install -y \
+    cron \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files
+COPY pyproject.toml ./
+COPY uv.lock ./
+
+# Install Python dependencies
+RUN uv sync --frozen
+
+# Copy userbot-specific files
+COPY userbot.py ./
+COPY database.py ./
+
+# Create directories for config and data
+RUN mkdir -p /app/config /app/data && chmod 755 /app/config /app/data
+
+# Set environment variables
+ENV DATABASE_PATH=/app/data/ezra.db
+
+# Create cron job script
+RUN echo '#!/bin/bash\n\
+export PATH=/usr/local/cargo/bin:/root/.cargo/bin:$PATH\n\
+export DATABASE_PATH=/app/data/ezra.db\n\
+export TELEGRAM_FOLDER_NAME=${TELEGRAM_FOLDER_NAME:-AI}\n\
+source /app/config/credentials.env\n\
+cd /app && /usr/local/bin/uv run python userbot.py >> /var/log/userbot.log 2>&1' > /app/run_userbot.sh
+RUN chmod +x /app/run_userbot.sh
+
+# Add cron job (every hour)
+RUN echo "0 * * * * root /app/run_userbot.sh" > /etc/cron.d/userbot-cron
+RUN chmod 0644 /etc/cron.d/userbot-cron
+
+# Create log file
+RUN touch /var/log/userbot.log && chmod 666 /var/log/userbot.log
+
+# Use volumes for persistent data
+VOLUME ["/app/config", "/app/data"]
+
+# Run as root to handle cron
+USER root
+
+# Start cron daemon
+CMD ["sh", "-c", "cron && tail -f /var/log/userbot.log"]
