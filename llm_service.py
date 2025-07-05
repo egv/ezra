@@ -13,7 +13,7 @@ class LLMService:
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
         self.client = AsyncOpenAI(api_key=api_key)
-        self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     async def generate_digest(self, messages: List[str]) -> str:
         if not messages:
