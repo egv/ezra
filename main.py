@@ -159,10 +159,44 @@ class EzraBot:
         await update.message.reply_text("🔄 Regenerating today's digest...")
         
         try:
-            await self.generate_and_send_digest()
+            await self.regenerate_digest_from_today()
             await update.message.reply_text("✅ Digest regenerated and sent to all subscribed users!")
         except Exception as e:
             await update.message.reply_text(f"❌ Failed to regenerate digest: {str(e)}")
+
+    async def regenerate_digest_from_today(self):
+        """Regenerate digest from all today's messages (not just unprocessed)"""
+        try:
+            logger.info("Starting digest regeneration from today's messages...")
+            
+            messages = await self.db.get_todays_messages()
+            
+            if not messages:
+                logger.info("No messages found for today")
+                return
+            
+            # Pass full message data for source link generation
+            digest = await self.llm.generate_digest_with_sources(messages)
+            
+            today = datetime.now().strftime("%Y-%m-%d")
+            await self.db.save_digest(today, digest)
+            
+            subscribed_users = await self.db.get_subscribed_users()
+            
+            for user_id in subscribed_users:
+                try:
+                    await self.application.bot.send_message(
+                        chat_id=user_id,
+                        text=digest,
+                        parse_mode='Markdown'
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send digest to user {user_id}: {e}")
+            
+            logger.info(f"Digest regenerated and sent to {len(subscribed_users)} users")
+            
+        except Exception as e:
+            logger.error(f"Error regenerating digest: {e}")
 
     async def handle_forwarded_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = update.effective_user

@@ -199,3 +199,14 @@ class Database:
             )
             result = await cursor.fetchone()
             return result[0] if result else None
+
+    async def get_todays_messages(self) -> List[Tuple[int, str, datetime, str]]:
+        """Get all messages from today for regenerating digest"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """SELECT message_id, content, message_date, message_link 
+                   FROM messages 
+                   WHERE DATE(message_date) = DATE('now') 
+                   ORDER BY message_date DESC"""
+            )
+            return await cursor.fetchall()
